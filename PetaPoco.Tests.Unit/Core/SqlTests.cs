@@ -341,5 +341,27 @@ namespace PetaPoco.Tests.Unit.Core
             sqlCapture2.Replace("\n", " ").ShouldBe("SELECT field FROM myTable");
             sqlCapture3.Replace("\n", " ").ShouldBe("SELECT field FROM myTable WHERE (id = @0)");
         }
+
+        [Fact]
+        public void Sql_AppendShouldntCorruptInner_ShouldBeValid()
+        {
+            var sql1 = new Sql("TEST 1");
+            var sql2 = new Sql("TEST 2");
+            var sql3 = new Sql("TEST 3");
+
+            var final1 = new Sql().Append(sql1).Append(sql2).Append(sql3);
+            final1.SQL.ShouldBe("TEST 1\nTEST 2\nTEST 3");
+            sql2.SQL.ShouldBe("TEST 2");
+        }
+
+        [Fact]
+        public void Sql_AppendTwiceShouldNotStackOverflow_ShouldBeValid()
+        {
+            var sql1 = new Sql("TEST");
+            var final = new Sql().Append(sql1).Append(sql1);
+            Should.NotThrow(() => {
+                final.SQL.ShouldBe("TEST\nTEST");
+            });
+        }
     }
 }

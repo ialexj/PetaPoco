@@ -13,7 +13,7 @@ namespace PetaPoco
     {
         private object[] _args;
         private object[] _argsFinal;
-        private Sql _rhs;
+        private List<Sql> _rhs = new List<Sql>();
 
         private string _sql;
         private string _sqlFinal;
@@ -91,11 +91,10 @@ namespace PetaPoco
         /// <returns>A reference to this builder, allowing for fluent style concatenation</returns>
         public Sql Append(Sql sql)
         {
-            if (_rhs != null)
-                _rhs.Append(sql);
-            else
-                _rhs = sql;
+            if (sql == this)
+                throw new ArgumentException("Can't append self.");
 
+            _rhs.Add(sql);
             _sqlFinal = null;
             return this;
         }
@@ -118,10 +117,10 @@ namespace PetaPoco
 
         private void Build(StringBuilder sb, List<object> args, Sql lhs)
         {
-            if (!string.IsNullOrEmpty(_sql))
+            if (!string.IsNullOrEmpty(_sql)) 
             {
                 // Add SQL to the string
-                if (sb.Length > 0)
+                if (sb.Length > 0) 
                 {
                     sb.Append("\n");
                 }
@@ -140,8 +139,11 @@ namespace PetaPoco
             }
 
             // Now do rhs
-            if (_rhs != null)
-                _rhs.Build(sb, args, this);
+            var last = this;
+            foreach (var rhs in _rhs) {
+                rhs.Build(sb, args, last);
+                last = rhs;
+            }
         }
 
         /// <summary>
