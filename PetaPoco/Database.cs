@@ -50,6 +50,7 @@ namespace PetaPoco
         private int _sharedConnectionDepth;
         private int _transactionDepth;
         private bool _transactionCancelled;
+        readonly Stack<Action> _rollbacks = new Stack<Action>();
         private string _lastSql;
         private object[] _lastArgs;
         private string _paramPrefix;
@@ -473,6 +474,7 @@ namespace PetaPoco
             if (_transactionDepth == 1)
             {
                 OpenSharedConnection();
+                _rollbacks.Clear();
                 _transaction = !_isolationLevel.HasValue ? _sharedConnection.BeginTransaction() : _sharedConnection.BeginTransaction(_isolationLevel.Value);
                 _transactionCancelled = false;
                 OnBeginTransaction();
@@ -520,13 +522,20 @@ namespace PetaPoco
         {
             OnEndTransaction();
 
-            if (_transactionCancelled)
+            if (_transactionCancelled) {
                 _transaction.Rollback();
-            else
+                while (_rollbacks.Count > 0) {
+                    _rollbacks.Pop()();
+                }
+            }
+            else {
                 _transaction.Commit();
+            }
 
             _transaction.Dispose();
             _transaction = null;
+
+            _rollbacks.Clear();
 
             CloseSharedConnection();
         }
@@ -583,17 +592,23 @@ namespace PetaPoco
         }
 #endif
 
-#endregion
 
-#region Command Management
+        public void OnRollback(Action action)
+		{
+			_rollbacks.Push(action);
+		}
 
-        /// <summary>
-        ///     Add a parameter to a DB command
-        /// </summary>
-        /// <param name="cmd">A reference to the IDbCommand to which the parameter is to be added</param>
-        /// <param name="value">The value to assign to the parameter</param>
-        /// <param name="pi">Optional, a reference to the property info of the POCO property from which the value is coming.</param>
-        private void AddParam(IDbCommand cmd, object value, PropertyInfo pi)
+    #endregion
+
+    #region Command Management
+
+    /// <summary>
+    ///     Add a parameter to a DB command
+    /// </summary>
+    /// <param name="cmd">A reference to the IDbCommand to which the parameter is to be added</param>
+    /// <param name="value">The value to assign to the parameter</param>
+    /// <param name="pi">Optional, a reference to the property info of the POCO property from which the value is coming.</param>
+    private void AddParam(IDbCommand cmd, object value, PropertyInfo pi)
         {
             // Convert value to from poco type to db type
             if (pi != null)
