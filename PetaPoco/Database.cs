@@ -436,9 +436,11 @@ namespace PetaPoco
             CloseSharedConnection();
         }
 
-#endregion
+        #endregion
 
-#region Transaction Management
+        #region Transaction Management
+
+        public int TransactionDepth => _transactionDepth;
 
         /// <inheritdoc />
         IDbTransaction ITransactionAccessor.Transaction => _transaction;
