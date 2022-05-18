@@ -31,6 +31,7 @@ namespace PetaPoco.Core
 
         public TableInfo TableInfo { get; private set; }
         public Dictionary<string, PocoColumn> Columns { get; private set; }
+        public Dictionary<string, PocoColumn> Properties { get; private set; }
 
         public PocoData()
         {
@@ -48,23 +49,29 @@ namespace PetaPoco.Core
 
             // Work out bound properties
             Columns = new Dictionary<string, PocoColumn>(StringComparer.OrdinalIgnoreCase);
+            Properties = new Dictionary<string, PocoColumn>();
+
             foreach (var pi in type.GetProperties(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
             {
                 ColumnInfo ci = mapper.GetColumnInfo(pi);
-                if (ci == null)
-                    continue;
 
-                var pc = new PocoColumn();
-                pc.PropertyInfo = pi;
-                pc.ColumnName = ci.ColumnName;
-                pc.ResultColumn = ci.ResultColumn;
-                pc.AutoSelectedResultColumn = ci.AutoSelectedResultColumn;
-                pc.ForceToUtc = ci.ForceToUtc;
-                pc.InsertTemplate = ci.InsertTemplate;
-                pc.UpdateTemplate = ci.UpdateTemplate;
+                if (ci != null) {
+                    var pc = new PocoColumn();
+                    pc.PropertyInfo = pi;
+                    pc.ColumnName = ci.ColumnName;
+                    pc.ResultColumn = ci.ResultColumn;
+                    pc.AutoSelectedResultColumn = ci.AutoSelectedResultColumn;
+                    pc.ForceToUtc = ci.ForceToUtc;
+                    pc.InsertTemplate = ci.InsertTemplate;
+                    pc.UpdateTemplate = ci.UpdateTemplate;
 
-                // Store it
-                Columns.Add(pc.ColumnName, pc);
+                    // Store it
+                    Columns.Add(pc.ColumnName, pc);
+                    Properties.Add(pi.Name, pc);
+                }
+                else {
+                    Properties.Add(pi.Name, null);
+                }
             }
 
             // Build column list for automatic select
