@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Data;
 using System.Data.Common;
+#if NETFRAMEWORK
+using System.Data.OleDb;
+#endif
 #if ASYNC
 using System.Threading;
 using System.Threading.Tasks;
@@ -33,5 +36,29 @@ namespace PetaPoco.Providers
 
         public override string BuildPageQuery(long skip, long take, SQLParts parts, ref object[] args)
             => throw new NotSupportedException("The Access provider does not support paging.");
+
+        public override object MapParameterValue(object value)
+        {
+            if (value is bool b)
+                return b ? -1 : 0;
+
+            return base.MapParameterValue(value);
+        }
+
+        public override void PrepareParameter(IDbDataParameter p)
+        {
+#if NETFRAMEWORK
+            if (p is OleDbParameter oledbp) {
+                if (oledbp.Value is decimal) {
+                    oledbp.OleDbType = OleDbType.Double; // OleDbType.Decimal has issues with regional settings
+                }
+                else if (oledbp.Value is DateTime) {
+                    oledbp.OleDbType = OleDbType.Date; // avoids issue with miliseconds
+                }
+            }
+
+            base.PrepareParameter(p);
+#endif
+        }
     }
 }
