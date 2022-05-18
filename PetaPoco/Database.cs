@@ -602,19 +602,19 @@ namespace PetaPoco
 
     #region Command Management
 
-    /// <summary>
-    ///     Add a parameter to a DB command
-    /// </summary>
-    /// <param name="cmd">A reference to the IDbCommand to which the parameter is to be added</param>
-    /// <param name="value">The value to assign to the parameter</param>
-    /// <param name="pi">Optional, a reference to the property info of the POCO property from which the value is coming.</param>
-    private void AddParam(IDbCommand cmd, object value, PropertyInfo pi)
+        /// <summary>
+        ///     Add a parameter to a DB command
+        /// </summary>
+        /// <param name="cmd">A reference to the IDbCommand to which the parameter is to be added</param>
+        /// <param name="value">The value to assign to the parameter</param>
+        /// <param name="pi">Optional, a reference to the property info of the POCO property from which the value is coming.</param>
+        private void AddParam(IDbCommand cmd, object value, PocoColumn pc)
         {
             // Convert value to from poco type to db type
-            if (pi != null)
+            if (pc != null)
             {
-                var mapper = Mappers.GetMapper(pi.DeclaringType, _defaultMapper);
-                var fn = mapper.GetToDbConverter(pi);
+                var mapper = Mappers.GetMapper(pc.PropertyInfo.DeclaringType, _defaultMapper);
+                var fn = mapper.GetToDbConverter(pc.PropertyInfo);
                 if (fn != null)
                     value = fn(value);
             }
@@ -633,20 +633,20 @@ namespace PetaPoco
             {
                 var p = cmd.CreateParameter();
                 p.ParameterName = cmd.Parameters.Count.EnsureParamPrefix(_paramPrefix);
-                SetParameterProperties(p, value, pi);
+                SetParameterProperties(p, value, pc);
 
                 cmd.Parameters.Add(p);
             }
         }
 
-        private void SetParameterProperties(IDbDataParameter p, object value, PropertyInfo pi)
+        private void SetParameterProperties(IDbDataParameter p, object value, PocoColumn pc)
         {
             // Assign the parameter value
             if (value == null)
             {
                 p.Value = DBNull.Value;
 
-                if (pi?.PropertyType.Name == "Byte[]")
+                if (pc?.PropertyInfo.PropertyType.Name == "Byte[]")
                     p.DbType = DbType.Binary;
             }
             else
@@ -655,6 +655,18 @@ namespace PetaPoco
                 value = _provider.MapParameterValue(value);
 
                 var t = value.GetType();
+
+                if (t == typeof(string) && pc?.ForceToAnsiString == true)
+                {
+                    t = typeof(AnsiString);
+                    value = value.ToAnsiString();
+                }
+                if (t == typeof(DateTime) && pc?.ForceToDateTime2 == true)
+                {
+                    t = typeof(DateTime2);
+                    value = ((DateTime)value).ToDateTime2();
+                }
+
                 if (t.IsEnum) // PostgreSQL .NET driver wont cast enum to int
                 {
                     p.Value = Convert.ChangeType(value, ((Enum)value).GetTypeCode());
@@ -689,6 +701,12 @@ namespace PetaPoco
                     }
                     // Thanks @DataChomp for pointing out the SQL Server indexing performance hit of using wrong string type on varchar
                     p.DbType = DbType.AnsiString;
+                }
+                else if (t == typeof(DateTime2))
+                {
+                    var dt2Value = (value as DateTime2)?.Value;
+                    p.Value = dt2Value ?? (object)DBNull.Value;
+                    p.DbType = DbType.DateTime2;
                 }
                 else if (value.GetType().Name == "SqlGeography") //SqlGeography is a CLR Type
                 {
@@ -1900,7 +1918,7 @@ namespace PetaPoco
 
                 names.Add(_provider.EscapeSqlIdentifier(i.Key));
                 values.Add(string.Format(i.Value.InsertTemplate ?? "{0}{1}", _paramPrefix, index++));
-                AddParam(cmd, i.Value.GetValue(poco), i.Value.PropertyInfo);
+                AddParam(cmd, i.Value.GetValue(poco), i.Value);
             }
 
             var outputClause = string.Empty;
@@ -2157,7 +2175,7 @@ namespace PetaPoco
                     sb.AppendFormat(i.Value.UpdateTemplate ?? "{0} = {1}{2}", _provider.EscapeSqlIdentifier(i.Key), _paramPrefix, index++);
 
                     // Store the parameter in the command
-                    AddParam(cmd, i.Value.GetValue(poco), i.Value.PropertyInfo);
+                    AddParam(cmd, i.Value.GetValue(poco), i.Value);
                 }
             }
             else
@@ -2172,7 +2190,7 @@ namespace PetaPoco
                     sb.AppendFormat(pc.UpdateTemplate ?? "{0} = {1}{2}", _provider.EscapeSqlIdentifier(colname), _paramPrefix, index++);
 
                     // Store the parameter in the command
-                    AddParam(cmd, pc.GetValue(poco), pc.PropertyInfo);
+                    AddParam(cmd, pc.GetValue(poco), pc);
                 }
 
                 // Grab primary key value
@@ -2184,16 +2202,18 @@ namespace PetaPoco
             }
 
             // Find the property info for the primary key
-            PropertyInfo pkpi = null;
+            //PropertyInfo pkpi = null;
+            PocoColumn col = null;
             if (primaryKeyName != null)
             {
-                PocoColumn col;
-                pkpi = pd.Columns.TryGetValue(primaryKeyName, out col) ? col.PropertyInfo : new { Id = primaryKeyValue }.GetType().GetProperties()[0];
+                //PocoColumn col;
+                //pkpi = pd.Columns.TryGetValue(primaryKeyName, out col) ? col.PropertyInfo : new { Id = primaryKeyValue }.GetType().GetProperties()[0];
+                pd.Columns.TryGetValue(primaryKeyName, out col);
             }
 
             cmd.CommandText =
                 $"UPDATE {_provider.EscapeTableName(tableName)} SET {sb} WHERE {_provider.EscapeSqlIdentifier(primaryKeyName)} = {_paramPrefix}{index++}";
-            AddParam(cmd, primaryKeyValue, pkpi);
+            AddParam(cmd, primaryKeyValue, col);
         }
 
 #if ASYNC
