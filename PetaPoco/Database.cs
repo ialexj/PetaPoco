@@ -1744,7 +1744,7 @@ namespace PetaPoco
             => FirstOrDefaultAsync<T>(cancellationToken, sql.SQL, sql.Arguments);
 
 #endif
-
+        
         private Sql GenerateSingleByKeySql<T>(object primaryKey)
         {
             string pkName = _provider.EscapeSqlIdentifier(PocoData.ForType(typeof(T), _defaultMapper).TableInfo.PrimaryKey);
@@ -1757,9 +1757,13 @@ namespace PetaPoco
             return new Sql(sql, primaryKey);
         }
 
-#endregion
+        public string GetSelectColumns<T>(string table = null) => AutoSelectHelper.GetColumnsString<T>(_provider, _defaultMapper, table);
 
-#region operation: Insert
+        public string GetSelectSql<T>(int top = 0) => AutoSelectHelper.AddSelectClause<T>(_provider, string.Empty, _defaultMapper, top);
+
+        #endregion
+
+        #region operation: Insert
 
         /// <inheritdoc />
         public object Insert(string tableName, object poco)
