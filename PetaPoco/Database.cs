@@ -709,6 +709,8 @@ namespace PetaPoco
                 {
                     p.Value = value;
                 }
+
+                _provider.PrepareParameter(p);
             }
         }
 

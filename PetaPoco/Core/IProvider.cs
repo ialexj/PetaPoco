@@ -58,6 +58,12 @@ namespace PetaPoco.Core
         object MapParameterValue(object value);
 
         /// <summary>
+        /// Applies final transformations to a parameter object that's about to be added to a command.
+        /// </summary>
+        /// <param name="parameter">The parameter that has been created.</param>
+        void PrepareParameter(IDbDataParameter parameter);
+
+        /// <summary>
         ///     Called immediately before a command is executed, allowing for modification of the IDbCommand before it's passed to
         ///     the database provider
         /// </summary>

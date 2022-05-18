@@ -50,6 +50,10 @@ namespace PetaPoco.Core
             return value;
         }
 
+        public virtual void PrepareParameter(IDbDataParameter parameter)
+        {
+        }
+
         /// <inheritdoc />
         public virtual void PreExecute(IDbCommand cmd)
         {
