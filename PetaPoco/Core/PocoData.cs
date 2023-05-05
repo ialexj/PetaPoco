@@ -269,7 +269,7 @@ namespace PetaPoco.Core
                                     il.Emit(OpCodes.Newobj, dstType.GetConstructor(new Type[] { Nullable.GetUnderlyingType(dstType) }));
                                 }
 
-                                il.Emit(OpCodes.Callvirt, pc.PropertyInfo.GetSetMethod(true)); // poco
+                                il.Emit(OpCodes.Callvirt, pc.PropertyInfo.GetSetMethod(true) ?? throw new Exception($"Column {pc.ColumnName} has no setter.")); // poco
                                 Handled = true;
                             }
                         }
@@ -291,7 +291,7 @@ namespace PetaPoco.Core
 
                             // Assign it
                             il.Emit(OpCodes.Unbox_Any, pc.PropertyInfo.PropertyType); // poco,poco,value
-                            il.Emit(OpCodes.Callvirt, pc.PropertyInfo.GetSetMethod(true)); // poco
+                            il.Emit(OpCodes.Callvirt, pc.PropertyInfo.GetSetMethod(true) ?? throw new Exception($"Column {pc.ColumnName} has no setter.")); // poco
                         }
 
                         il.MarkLabel(lblNext);
