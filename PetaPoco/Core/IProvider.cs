@@ -24,6 +24,11 @@ namespace PetaPoco.Core
         bool HasNativeGuidSupport { get; }
 
         /// <summary>
+        /// Gets whether the provider supports named parameters.
+        /// </summary>
+        bool SupportsNamedParams { get; }
+
+        /// <summary>
         ///     Escape a table name into a suitable format for the associated database provider.
         /// </summary>
         /// <param name="tableName">

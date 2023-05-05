@@ -297,8 +297,6 @@ namespace PetaPoco
         {
             // Reset
             _transactionDepth = 0;
-            EnableAutoSelect = true;
-            EnableNamedParams = true;
 
             // What character is used for delimiting parameters in SQL
             _provider = provider;
@@ -306,6 +304,9 @@ namespace PetaPoco
             _factory = _provider.GetFactory();
 
             _defaultMapper = mapper ?? new ConventionMapper();
+
+            EnableAutoSelect = true;
+            EnableNamedParams = _provider.SupportsNamedParams;
         }
 
 #endregion

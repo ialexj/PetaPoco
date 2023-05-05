@@ -27,6 +27,9 @@ namespace PetaPoco.Core
         public virtual bool HasNativeGuidSupport => false;
 
         /// <inheritdoc />
+        public virtual bool SupportsNamedParams => true;
+
+        /// <inheritdoc />
         public virtual IPagingHelper PagingUtility => PagingHelper.Instance;
 
         /// <inheritdoc />

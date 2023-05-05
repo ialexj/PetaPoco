@@ -13,6 +13,8 @@ namespace PetaPoco.Providers
 {
     public class MsAccessDbDatabaseProvider : DatabaseProvider
     {
+        public override bool SupportsNamedParams => false;
+
         public override DbProviderFactory GetFactory()
             => GetFactory("System.Data.OleDb.OleDbFactory, System.Data, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089");
 
