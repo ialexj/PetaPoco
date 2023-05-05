@@ -277,6 +277,18 @@ namespace PetaPoco.Tests.Unit
         }
 
         [Fact]
+        public void UsingConnectionOpening_AfterCreate_InstanceShouldHaveDelegate()
+        {
+            bool eventFired = false;
+            EventHandler<DbConnectionEventArgs> handler = (sender, args) => eventFired = true;
+
+            var db = config.UsingConnectionString("cs").UsingProvider<SqlServerDatabaseProvider>().UsingConnectionOpening(handler).Create();
+
+            (db as Database).OnConnectionOpening(null);
+            eventFired.ShouldBeTrue();
+        }
+        
+        [Fact]
         public void UsingConnectionOpened_AfterCreate_InstanceShouldHaveDelegate()
         {
             bool eventFired = false;
