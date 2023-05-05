@@ -233,15 +233,27 @@ namespace PetaPoco
             return Join("LEFT JOIN ", table);
         }
 
-        /// <summary>
-        ///     Returns the SQL statement.
-        /// </summary>
-        /// <summary>
-        ///     Returns the final SQL statement represented by this builder
-        /// </summary>
+
+        public static string FormatCommand(string sql, object[] args)
+        {
+            if (string.IsNullOrEmpty(sql))
+                return string.Empty;
+
+            var sb = new StringBuilder(sql);
+            if (args != null && args.Length > 0) {
+                sb.Append("\n");
+                for (int i = 0; i < args.Length; i++) {
+                    sb.AppendFormat("\t -> {0}{1} [{2}] = \"{3}\"\n", "@", i, args[i].GetType().Name, args[i]);
+                }
+                sb.Remove(sb.Length - 1, 1);
+            }
+
+            return sb.ToString();
+        }
+
         public override string ToString()
         {
-            return SQL;
+            return FormatCommand(SQL, Arguments);
         }
 
         /// <summary>
