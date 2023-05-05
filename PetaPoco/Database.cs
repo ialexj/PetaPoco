@@ -1560,8 +1560,10 @@ namespace PetaPoco
                             }
                             catch (Exception e)
                             {
-                                if (OnException(e))
-                                    throw;
+                                if (OnException(e)) {
+                                    throw new Exception($"Couldn't materialize an instance of '{typeof(T).Name}'.", e);
+                                }
+
                                 return;
                             }
                         }
@@ -1646,8 +1648,10 @@ namespace PetaPoco
                             }
                             catch (Exception x)
                             {
-                                if (OnException(x))
-                                    throw;
+                                if (OnException(x)) {
+                                    throw new Exception($"Couldn't materialize an instance of '{typeof(T).Name}'.", x);
+                                }
+
                                 yield break;
                             }
 
