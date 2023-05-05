@@ -2261,6 +2261,9 @@ namespace PetaPoco
             {
                 foreach (var colname in columns)
                 {
+                    if (colname is null)
+                        continue;
+
                     var pc = pd.Columns[colname];
 
                     // Build the sql
