@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Data;
 using System.Data.Common;
-#if NETFRAMEWORK
 using System.Data.OleDb;
-#endif
 #if ASYNC
 using System.Threading;
 using System.Threading.Tasks;
@@ -47,7 +45,6 @@ namespace PetaPoco.Providers
 
         public override void PrepareParameter(IDbDataParameter p)
         {
-#if NETFRAMEWORK
             if (p is OleDbParameter oledbp) {
                 if (oledbp.Value is decimal) {
                     oledbp.OleDbType = OleDbType.Double; // OleDbType.Decimal has issues with regional settings
@@ -58,7 +55,6 @@ namespace PetaPoco.Providers
             }
 
             base.PrepareParameter(p);
-#endif
         }
     }
 }
