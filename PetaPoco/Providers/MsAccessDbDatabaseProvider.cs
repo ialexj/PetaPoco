@@ -58,5 +58,16 @@ namespace PetaPoco.Providers
 
             base.PrepareParameter(p);
         }
+
+        public override void PreExecute(IDbCommand cmd)
+        {
+            cmd.CommandText = cmd.CommandText
+                .Replace("[[True]]", "True")
+                .Replace("[[False]]", "False")
+                .Replace("[[NOW]]", "NOW()")
+                .Replace("[[DATE]]", "DATE()");
+
+            base.PreExecute(cmd);
+        }
     }
 }

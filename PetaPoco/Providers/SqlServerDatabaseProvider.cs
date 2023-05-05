@@ -1,4 +1,5 @@
-﻿using System.Data;
+﻿using System;
+using System.Data;
 using System.Data.Common;
 using System.Linq;
 using System.Threading;
@@ -49,5 +50,28 @@ namespace PetaPoco.Providers
         public override Task<object> ExecuteInsertAsync(CancellationToken cancellationToken, Database db, IDbCommand cmd, string primaryKeyName)
             => ExecuteScalarHelperAsync(cancellationToken, db, cmd);
 #endif
+
+        public override void PrepareParameter(IDbDataParameter p)
+        {
+            if (p is System.Data.SqlClient.SqlParameter oledbp) {
+                if (oledbp.Value is DateTime) {
+                    oledbp.DbType = DbType.DateTime2;
+                }
+            }
+
+            base.PrepareParameter(p);
+        }
+
+        public override void PreExecute(IDbCommand cmd)
+        {
+            cmd.CommandText = cmd.CommandText
+                .Replace("[[True]]", "1")
+                .Replace("[[False]]", "0")
+                .Replace("[[NOW]]", "GETDATE()")
+                .Replace("[[DATE]]", "CAST(GETDATE() AS date)")
+                ;
+
+            base.PreExecute(cmd);
+        }
     }
 }
