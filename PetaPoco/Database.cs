@@ -1875,7 +1875,10 @@ namespace PetaPoco
 
             var pd = PocoData.ForType(poco.GetType(), _defaultMapper);
 
-            return ExecuteInsert(tableName, pd == null ? null : pd.TableInfo.PrimaryKey, pd != null && pd.TableInfo.AutoIncrement, poco);
+            return ExecuteInsert(poco, new InsertOptions {
+                TableName = tableName,
+                PocoData = pd
+            });
         }
 
         /// <inheritdoc />
@@ -1895,7 +1898,11 @@ namespace PetaPoco
             var autoIncrement = pd == null || pd.TableInfo.AutoIncrement || t.Name.Contains("AnonymousType") &&
                                 !t.GetProperties().Any(p => p.Name.Equals(primaryKeyName, StringComparison.OrdinalIgnoreCase));
 
-            return ExecuteInsert(tableName, primaryKeyName, autoIncrement, poco);
+            return ExecuteInsert(poco, new InsertOptions {
+                TableName = tableName,
+                PrimaryKeyName = primaryKeyName,
+                AutoIncrement = autoIncrement,
+            });
         }
 
         /// <inheritdoc />
@@ -1910,21 +1917,58 @@ namespace PetaPoco
             if (poco == null)
                 throw new ArgumentNullException(nameof(poco));
 
-            return ExecuteInsert(tableName, primaryKeyName, autoIncrement, poco);
+            return ExecuteInsert(poco, new InsertOptions {
+                TableName = tableName,
+                PrimaryKeyName = primaryKeyName,
+                AutoIncrement = autoIncrement
+            });
         }
 
         /// <inheritdoc />
-        public object Insert(object poco)
+        public object Insert(object poco) => ExecuteInsert(poco, default);
+
+        /// <inheritdoc />
+        public object Insert(Type type, object poco)
         {
             if (poco == null)
                 throw new ArgumentNullException(nameof(poco));
 
-            var pd = PocoData.ForType(poco.GetType(), _defaultMapper);
-            return ExecuteInsert(pd.TableInfo.TableName, pd.TableInfo.PrimaryKey, pd.TableInfo.AutoIncrement, poco);
+            if (type == null)
+                throw new ArgumentNullException(nameof(type));
+
+            return ExecuteInsert(poco, new InsertOptions {
+                PocoData = PocoData.ForType(type, _defaultMapper),
+                DeclaredColumnsOnly = true
+            });
         }
 
-        private object ExecuteInsert(string tableName, string primaryKeyName, bool autoIncrement, object poco)
+
+        struct InsertOptions
         {
+            public string TableName { get; set; }
+
+            public string PrimaryKeyName { get; set; }
+
+            public bool? AutoIncrement { get; set; }
+
+            public PocoData PocoData { get; set; }
+
+            public bool DeclaredColumnsOnly { get; set; }
+        }
+
+        private object ExecuteInsert(object poco, InsertOptions options)
+        {
+            if (poco == null)
+                throw new ArgumentNullException(nameof(poco));
+
+            var pd = options.PocoData ?? PocoData.ForObject(poco, options.PrimaryKeyName, _defaultMapper);
+            var tableName = options.TableName ?? pd.TableInfo.TableName;
+            var primaryKeyName = options.PrimaryKeyName ?? pd.TableInfo.PrimaryKey;
+            var autoIncrement = options.AutoIncrement ?? pd.TableInfo.AutoIncrement;
+            var columns = options.DeclaredColumnsOnly
+                ? pd.Columns.Where(c => c.Value.PropertyInfo.DeclaringType == pd.Type)
+                : pd.Columns;
+
             try
             {
                 OpenSharedConnection();
@@ -1932,7 +1976,6 @@ namespace PetaPoco
                 {
                     using (var cmd = CreateCommand(_sharedConnection, string.Empty))
                     {
-                        var pd = PocoData.ForObject(poco, primaryKeyName, _defaultMapper);
                         var names = new List<string>();
                         var values = new List<string>();
 

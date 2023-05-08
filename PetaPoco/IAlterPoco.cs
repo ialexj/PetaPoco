@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace PetaPoco
@@ -35,6 +36,17 @@ namespace PetaPoco
         ///     the new id is returned.
         /// </remarks>
         object Insert(string tableName, string primaryKeyName, bool autoIncrement, object poco);
+
+        /// <summary>
+        ///     Performs an SQL Insert.
+        /// </summary>
+        /// <param name="type">The type of poco to assume.</param>
+        /// <param name="poco">The poco to insert.</param>
+        /// <returns></returns>
+        /// <remarks>
+        ///     Inserts a POCO into a table. Only the columns specific to the passed type are included.
+        /// </remarks>
+        object Insert(Type type, object poco);
 
         /// <summary>
         ///     Performs an SQL Insert.

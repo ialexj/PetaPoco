@@ -146,7 +146,8 @@ namespace PetaPoco.Tests.Unit
         public void Insert_GivenInvalidArguments_ShouldThrow()
         {
             Should.Throw<ArgumentNullException>(() => DB.Insert(null));
-            Should.Throw<ArgumentNullException>(() => DB.Insert(null, null));
+            Should.Throw<ArgumentNullException>(() => DB.Insert((string)null, null));
+            Should.Throw<ArgumentNullException>(() => DB.Insert((Type)null, null));
             Should.Throw<ArgumentNullException>(() => DB.Insert(null, "SomeColumn", new Person()));
             Should.Throw<ArgumentNullException>(() => DB.Insert("SomeTable", null, new Person()));
             Should.Throw<ArgumentNullException>(() => DB.Insert("SomeTable", "SomeColumn", null));
